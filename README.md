@@ -1,91 +1,98 @@
 ## What
 
-Boilerplate serverless function to enable Stripe Subscriptions.
+Serverless function to enable **Stripe Subscriptions** for BigCommerce stores. Since BigCommerce's native Stripe integration does not support recurring subscriptions, this function acts as middleware — listening for order webhooks and automatically enrolling customers in Stripe subscription plans.
 
-## What does this application do?
+See [PLAN.md](PLAN.md) for a detailed architecture overview and POC plan.
 
-The application is using BigCommerce webhooks to send Order data to a serverless function to determine if the user purchased a subscription product and should be enrolled in a Stripe subscription.
+## How It Works
+
+1. A customer purchases a subscription product on your BigCommerce store
+2. BigCommerce fires a `store/cart/converted` webhook to the Lambda endpoint
+3. The Lambda function checks if the purchased product SKU matches configured subscription SKUs
+4. If matched, it retrieves the Stripe payment intent from the BigCommerce transaction
+5. It uses the payment intent to get the customer ID and payment method from Stripe
+6. It creates a Stripe subscription for the customer using the configured price ID
 
 ## Contributing
 
 George FitzGibbons
 
-### Running the project
+### Prerequisites
 
-To get started you will need to have a BigCommerce Store.
+- **Node.js 18+**
+- **Serverless Framework** — [https://serverless.com/](https://serverless.com/)
+- **AWS Account** — [AWS setup guide for Serverless](https://serverless.com/framework/docs/providers/aws/guide/installation/)
+- **BigCommerce Store** with API credentials (read permissions for products and orders)
+- **Stripe Account** with a subscription product and price configured
 
-You will need to have +v10 node.
+### Setup
 
-You will need Serverless
+1. Clone this repository:
 
-```https://serverless.com/
-
-In this example the serverless.yml is configured for AWS.
-https://serverless.com/framework/docs/providers/aws/guide/installation/
-
-You can easily update the yml for your desired FAAS providers
+```bash
+git clone <your-fork-url>
+cd StripeSubscriptionsBigcommerce/StripeManager
 ```
 
-You will need to generate BigCommerce API keys, these keys need to have read permissions for products.
+2. Copy the `.env.example` file and fill in your credentials:
 
-In the serverless.yml file update the environment with your site API Keys
-
-```
-environment:
-  STORE_HASH: {YOUR STORE HASH}
-  BC_CLIENT: {BC CLIENT ID}
-  BC_TOKEN: {BC TOKEN ID}
-  STRIPE_SECRET: {STRIPE SECRET KEY}
-
+```bash
+cp .env.example .env
 ```
 
-Now run to set up
+Required environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `STORE_HASH` | Your BigCommerce store hash |
+| `BC_CLIENT` | BigCommerce API Client ID |
+| `BC_TOKEN` | BigCommerce API Access Token |
+| `STRIPE_SECRET` | Stripe Secret API Key (`sk_test_...` or `sk_live_...`) |
+| `STRIPE_PRICE_ID` | Stripe Price ID for the subscription (`price_XXXX`) |
+| `SUBSCRIPTION_SKUS` | Comma-separated product SKUs that trigger subscriptions |
+
+3. Install dependencies:
 
 ```bash
 npm install
 ```
 
-Now you're ready to deploy
+4. Deploy:
 
 ```bash
-cd stripeManager
 sls deploy
 ```
 
-You will get an API endpoint back, you will use this when you set up your webhook.
+You will get an API endpoint back:
 
 ```
 endpoints:
   POST - https://{XXXXXX}.execute-api.us-east-1.amazonaws.com/dev/stripeManager
 ```
 
-Now in postman create the webhook to send order created to endpoints
-https://developer.bigcommerce.com/api-docs/getting-started/webhooks/webhook-events#orders
+### BigCommerce Webhook Setup
 
-```
-curl --location --request POST 'https://api.bigcommerce.com/stores/{STORE HASH}/v2/hooks' \
---header 'X-Auth-Client: XXXXX' \
---header 'X-Auth-Token: YYYYYY' \
+Register a webhook to send order events to your endpoint:
+
+```bash
+curl --location --request POST 'https://api.bigcommerce.com/stores/{STORE_HASH}/v2/hooks' \
+--header 'X-Auth-Client: YOUR_CLIENT_ID' \
+--header 'X-Auth-Token: YOUR_ACCESS_TOKEN' \
+--header 'Content-Type: application/json' \
 --data-raw '{
  "scope": "store/cart/converted",
- "destination": "https://ZZZZZ.execute-api.us-east-1.amazonaws.com/dev/stripeManager",
+ "destination": "https://XXXXXX.execute-api.us-east-1.amazonaws.com/dev/stripeManager",
  "is_active": true
 }'
 ```
 
-In BigCommerce you must add your product with the sane sku as in Stripe. You will also need to add a custom field price for the price object of the subscription from Stripe.
+### Product Configuration
 
-### Additional resources
+In BigCommerce, ensure your subscription product has a **SKU** that matches one of the values in your `SUBSCRIPTION_SKUS` environment variable. The SKU should also correspond to a product in your Stripe dashboard.
 
-Stripe has great product that can be used to enable user management using a simple iframe.  This enables users to adjust and manage their subscription within their my account page.
+### Additional Resources
 
-Portal
-https://dashboard.stripe.com/test/settings/billing/portal
-
-Stripe API docs
-Subscription Management Docs
-https://stripe.com/docs/billing/subscriptions/overview
-https://stripe.com/docs/billing/subscriptions/model
-https://stripe.com/docs/billing/subscriptions/change
-
-
+- [Stripe Billing Portal](https://dashboard.stripe.com/test/settings/billing/portal) — Enable customer self-service subscription management
+- [Stripe Subscription Overview](https://stripe.com/docs/billing/subscriptions/overview)
+- [Stripe Subscription Models](https://stripe.com/docs/billing/subscriptions/model)
+- [Stripe Subscription Changes](https://stripe.com/docs/billing/subscriptions/change)

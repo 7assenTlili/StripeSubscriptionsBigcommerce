@@ -1,17 +1,21 @@
 service: aws-nodejs
 provider:
   name: aws
-  runtime: nodejs10.x
+  runtime: nodejs18.x
 functions:
   stripeManager:
     handler: handler.stripeManager
     environment:
-      STORE_HASH: { { BC_STORE_HASH } }
-      BC_CLIENT: { { BC_CLIENT_ID } }
-      BC_TOKEN: { { BC_TOKEN_ID } }
-      STRIPE_SECRET: { { STRIPE_SECRET } }
+      STORE_HASH: ${env:STORE_HASH}
+      BC_CLIENT: ${env:BC_CLIENT}
+      BC_TOKEN: ${env:BC_TOKEN}
+      STRIPE_SECRET: ${env:STRIPE_SECRET}
+      STRIPE_PRICE_ID: ${env:STRIPE_PRICE_ID}
+      SUBSCRIPTION_SKUS: ${env:SUBSCRIPTION_SKUS}
     events:
       - http:
           path: stripeManager
           method: post
           cors: true
+plugins:
+  - serverless-dotenv-plugin

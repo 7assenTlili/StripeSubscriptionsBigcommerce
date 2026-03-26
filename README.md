@@ -2,7 +2,9 @@
 
 Serverless function to enable **Stripe Subscriptions** for BigCommerce stores. Since BigCommerce's native Stripe integration does not support recurring subscriptions, this function acts as middleware — listening for order webhooks and automatically enrolling customers in Stripe subscription plans.
 
-See [PLAN.md](PLAN.md) for a detailed architecture overview and POC plan.
+📊 **[Subscription Flow Diagram & Stakeholder Guide](docs/SUBSCRIPTION_FLOW.md)** — Visual diagrams and plain English explanation for non-technical audiences.
+
+📋 See [PLAN.md](PLAN.md) for a detailed architecture overview and POC plan.
 
 ## How It Works
 

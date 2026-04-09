@@ -7,3 +7,5 @@ jspm_packages
 
 # Environment files (contain secrets)
 .env
+
+.idea/

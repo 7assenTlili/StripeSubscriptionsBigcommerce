@@ -18,6 +18,7 @@ function getSubscriptionSkus() {
 }
 
 function isSubscriptionProduct(sku) {
+  return true;
   const subscriptionSkus = getSubscriptionSkus();
   return subscriptionSkus.includes(sku);
 }
@@ -61,6 +62,7 @@ async function addSubscription(customerId, paymentMethod) {
 }
 
 module.exports.stripeManager = async event => {
+  console.log('first step of the function')
   const corsHeaders = {
     "Access-Control-Allow-Credentials": true,
     "Access-Control-Allow-Origin": "*",
@@ -86,7 +88,9 @@ module.exports.stripeManager = async event => {
       };
     }
 
+    // console.log('will request order data for orderId:', orderId);
     const orderItemsData = await getOrderDataProducts(orderId);
+    // console.log('orderItemsData', orderItemsData);
 
     if (!orderItemsData || orderItemsData.length === 0) {
       return {
@@ -115,11 +119,15 @@ module.exports.stripeManager = async event => {
       throw new Error("No transaction data found for order");
     }
 
+    // console.log('transactionData', JSON.stringify(transactionData));
+
     const gatewayTransactionId = transactionData.data[0].gateway_transaction_id;
     console.log("Gateway transaction ID:", gatewayTransactionId);
 
     // Get customer and payment method from Stripe
     const paymentIntent = await stripePaymentMethods(gatewayTransactionId);
+
+    console.log('paymentIntent', paymentIntent);
 
     // Create subscription
     const subscription = await addSubscription(
